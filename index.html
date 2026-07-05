@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SUP-прокат — бронирование</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: var(--tg-theme-bg-color, #ffffff);
+    --text: var(--tg-theme-text-color, #222222);
+    --hint: var(--tg-theme-hint-color, #8e8e93);
+    --accent: var(--tg-theme-button-color, #2481cc);
+    --accent-text: var(--tg-theme-button-text-color, #ffffff);
+    --card: var(--tg-theme-secondary-bg-color, #f2f2f7);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 16px 16px 96px;
+  }
+  h1 { font-size: 1.3rem; margin-bottom: 4px; }
+  .sub { color: var(--hint); font-size: 0.9rem; margin-bottom: 20px; }
+  .section { margin-bottom: 20px; }
+  .label { font-weight: 600; font-size: 0.95rem; margin-bottom: 8px; display: block; }
+
+  .cards { display: grid; gap: 8px; }
+  .card {
+    background: var(--card);
+    border: 2px solid transparent;
+    border-radius: 14px;
+    padding: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    transition: border-color .15s;
+  }
+  .card.selected { border-color: var(--accent); }
+  .card .emoji { font-size: 1.5rem; }
+  .card .place-hint { color: var(--hint); font-size: 0.8rem; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    background: var(--card);
+    border: 2px solid transparent;
+    border-radius: 20px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: border-color .15s;
+  }
+  .chip.selected { border-color: var(--accent); font-weight: 600; }
+  .chip.disabled { opacity: 0.35; pointer-events: none; }
+
+  input[type="text"], input[type="tel"], input[type="date"], input[type="number"], textarea {
+    width: 100%;
+    background: var(--card);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 1rem;
+    color: var(--text);
+    outline: none;
+    font-family: inherit;
+  }
+  input:focus, textarea:focus { border-color: var(--accent); }
+  textarea { resize: none; height: 72px; }
+
+  .promo-row { display: flex; gap: 8px; }
+  .promo-row input { flex: 1; text-transform: uppercase; }
+  .promo-btn {
+    background: var(--accent);
+    color: var(--accent-text);
+    border: none;
+    border-radius: 12px;
+    padding: 0 18px;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  .promo-msg { font-size: 0.85rem; margin-top: 6px; min-height: 1.2em; }
+  .promo-msg.ok { color: #2e9e46; }
+  .promo-msg.err { color: #d33; }
+
+  .hidden { display: none; }
+  .error-hl { border-color: #d33 !important; }
+
+  #submitFallback {
+    width: 100%;
+    background: var(--accent);
+    color: var(--accent-text);
+    border: none;
+    border-radius: 14px;
+    padding: 15px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<h1>🏄 SUP-прокат</h1>
+<div class="sub">Бронь за минуту — сапборды, шатёр, беседка у воды</div>
+
+<div class="section">
+  <span class="label">Что бронируем?</span>
+  <div class="cards" id="serviceCards">
+    <div class="card" data-service="Сапборды"><span class="emoji">🏄</span><div>Сапборды<div class="place-hint">доска, весло, жилет и лиш — в комплекте</div></div></div>
+    <div class="card" data-service="Шатёр" data-place="Пляж Малибу"><span class="emoji">⛺</span><div>Шатёр<div class="place-hint">Пляж Малибу</div></div></div>
+    <div class="card" data-service="Беседка" data-place="8-я просека"><span class="emoji">🏡</span><div>Беседка<div class="place-hint">8-я просека</div></div></div>
+  </div>
+</div>
+
+<div class="section hidden" id="beachSection">
+  <span class="label">Где кататься? 🏖</span>
+  <div class="chips" id="beachChips">
+    <div class="chip" data-beach="8-я просека">8-я просека</div>
+    <div class="chip" data-beach="Пляж Малибу">Пляж Малибу</div>
+    <div class="chip" data-beach="Красная Глинка">Красная Глинка</div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">Дата 📅</span>
+  <input type="date" id="dateInput">
+</div>
+
+<div class="section">
+  <span class="label">Время 🕐</span>
+  <div class="chips" id="timeChips"></div>
+</div>
+
+<div class="section">
+  <span class="label">Сколько человек? 👥</span>
+  <div class="chips" id="peopleChips">
+    <div class="chip" data-people="1">1</div>
+    <div class="chip" data-people="2">2</div>
+    <div class="chip" data-people="3">3</div>
+    <div class="chip" data-people="4">4</div>
+    <div class="chip" data-people="5">5</div>
+    <div class="chip" data-people="more">Больше</div>
+  </div>
+  <input type="number" id="peopleManual" class="hidden" min="1" max="100" placeholder="Сколько вас будет?" style="margin-top:8px;">
+</div>
+
+<div class="section">
+  <span class="label">Как вас зовут?</span>
+  <input type="text" id="nameInput" placeholder="Имя">
+</div>
+
+<div class="section">
+  <span class="label">Телефон <span style="color:var(--hint);font-weight:400;">(можно пропустить — напишем в Telegram)</span></span>
+  <input type="tel" id="phoneInput" placeholder="+7 900 000-00-00">
+</div>
+
+<div class="section">
+  <span class="label">Промокод 🎁 <span style="color:var(--hint);font-weight:400;">(если есть)</span></span>
+  <div class="promo-row">
+    <input type="text" id="promoInput" placeholder="ПРОМОКОД">
+    <button class="promo-btn" id="promoApply">Применить</button>
+  </div>
+  <div class="promo-msg" id="promoMsg"></div>
+</div>
+
+<div class="section">
+  <span class="label">Комментарий 💬 <span style="color:var(--hint);font-weight:400;">(необязательно)</span></span>
+  <textarea id="commentInput" placeholder="Например: нужен инструктаж, будут дети…"></textarea>
+</div>
+
+<button id="submitFallback">📝 Забронировать</button>
+
+<script>
+  var tg = window.Telegram.WebApp;
+  tg.ready();
+  tg.expand();
+
+  // Настройки (совпадают с ботом)
+  var WORK_START = 7, WORK_END = 23, MAX_DAYS_AHEAD = 90;
+  var PROMO_CODES = { "LEV": 10 };
+
+  var state = { service: null, place: null, date: null, time: null,
+                people: null, promo: "", discount: 0 };
+
+  function $(id) { return document.getElementById(id); }
+
+  // ---- Услуга ----
+  var cards = document.querySelectorAll("#serviceCards .card");
+  cards.forEach(function (c) {
+    c.onclick = function () {
+      cards.forEach(function (x) { x.classList.remove("selected"); });
+      c.classList.add("selected");
+      state.service = c.dataset.service;
+      if (state.service === "Сапборды") {
+        $("beachSection").classList.remove("hidden");
+        state.place = null;
+      } else {
+        $("beachSection").classList.add("hidden");
+        document.querySelectorAll("#beachChips .chip").forEach(function (x) { x.classList.remove("selected"); });
+        state.place = c.dataset.place;
+      }
+    };
+  });
+
+  // ---- Пляж ----
+  document.querySelectorAll("#beachChips .chip").forEach(function (c) {
+    c.onclick = function () {
+      document.querySelectorAll("#beachChips .chip").forEach(function (x) { x.classList.remove("selected"); });
+      c.classList.add("selected");
+      state.place = c.dataset.beach;
+    };
+  });
+
+  // ---- Дата ----
+  function fmtDate(d) {
+    var m = (d.getMonth() + 1), day = d.getDate();
+    return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+  }
+  var today = new Date();
+  var maxDate = new Date(); maxDate.setDate(maxDate.getDate() + MAX_DAYS_AHEAD);
+  $("dateInput").min = fmtDate(today);
+  $("dateInput").max = fmtDate(maxDate);
+  $("dateInput").onchange = function () {
+    state.date = this.value;
+    state.time = null;
+    renderTimeChips();
+  };
+
+  // ---- Время ----
+  function renderTimeChips() {
+    var box = $("timeChips");
+    box.innerHTML = "";
+    var isToday = state.date === fmtDate(new Date());
+    var nowH = new Date().getHours();
+    for (var h = WORK_START; h < WORK_END; h++) {
+      var chip = document.createElement("div");
+      chip.className = "chip";
+      chip.textContent = (h < 10 ? "0" : "") + h + ":00";
+      if (isToday && h <= nowH) chip.classList.add("disabled");
+      chip.onclick = (function (hh) {
+        return function () {
+          document.querySelectorAll("#timeChips .chip").forEach(function (x) { x.classList.remove("selected"); });
+          this.classList.add("selected");
+          state.time = (hh < 10 ? "0" : "") + hh + ":00";
+        };
+      })(h);
+      box.appendChild(chip);
+    }
+    if (!box.querySelector(".chip:not(.disabled)")) {
+      box.innerHTML = '<span style="color:var(--hint)">На сегодня свободных часов уже нет 😔 Выберите другой день.</span>';
+    }
+  }
+  renderTimeChips();
+
+  // ---- Человек ----
+  document.querySelectorAll("#peopleChips .chip").forEach(function (c) {
+    c.onclick = function () {
+      document.querySelectorAll("#peopleChips .chip").forEach(function (x) { x.classList.remove("selected"); });
+      c.classList.add("selected");
+      if (c.dataset.people === "more") {
+        $("peopleManual").classList.remove("hidden");
+        $("peopleManual").focus();
+        state.people = null;
+      } else {
+        $("peopleManual").classList.add("hidden");
+        state.people = c.dataset.people;
+      }
+    };
+  });
+  $("peopleManual").oninput = function () {
+    var v = parseInt(this.value, 10);
+    state.people = (v >= 1 && v <= 100) ? String(v) : null;
+  };
+
+  // ---- Промокод ----
+  $("promoApply").onclick = function () {
+    var code = $("promoInput").value.trim().toUpperCase().replace(/\s+/g, "");
+    var msg = $("promoMsg");
+    if (!code) { msg.textContent = ""; state.promo = ""; state.discount = 0; return; }
+    if (PROMO_CODES[code]) {
+      state.promo = code;
+      state.discount = PROMO_CODES[code];
+      msg.textContent = "🎉 Промокод принят — скидка " + state.discount + "%!";
+      msg.className = "promo-msg ok";
+    } else {
+      state.promo = ""; state.discount = 0;
+      msg.textContent = "Такого промокода нет 😔";
+      msg.className = "promo-msg err";
+    }
+  };
+
+  // ---- Отправка ----
+  function validate() {
+    var missing = [];
+    if (!state.service) missing.push("услугу");
+    if (state.service === "Сапборды" && !state.place) missing.push("пляж");
+    if (!state.date) missing.push("дату");
+    if (!state.time) missing.push("время");
+    if (!state.people) missing.push("количество человек");
+    if (!$("nameInput").value.trim()) missing.push("имя");
+    return missing;
+  }
+
+  function submit() {
+    var missing = validate();
+    if (missing.length) {
+      var text = "Заполните, пожалуйста: " + missing.join(", ");
+      if (tg.showAlert) { tg.showAlert(text); } else { alert(text); }
+      return;
+    }
+    var d = state.date.split("-");
+    var payload = {
+      service: state.service,
+      place: state.place,
+      date: d[2] + "." + d[1] + "." + d[0],
+      time: state.time,
+      people: state.people,
+      name: $("nameInput").value.trim(),
+      phone: $("phoneInput").value.trim() || "не указан (связь через Telegram)",
+      promo: state.promo,
+      discount: state.discount,
+      comment: $("commentInput").value.trim()
+    };
+    tg.sendData(JSON.stringify(payload));
+  }
+
+  // Главная кнопка Telegram + запасная на странице
+  if (tg.MainButton) {
+    tg.MainButton.setText("📝 Забронировать");
+    tg.MainButton.show();
+    tg.MainButton.onClick(submit);
+    $("submitFallback").style.display = "none";
+  }
+  $("submitFallback").onclick = submit;
+</script>
+</body>
+</html>
