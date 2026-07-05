@@ -179,6 +179,14 @@
   input::placeholder, textarea::placeholder { color: var(--muted); opacity: .8; }
   textarea { resize: none; height: 74px; }
   input[type="date"] { -webkit-appearance: none; appearance: none; min-height: 47px; }
+  /* серый текст-подсказка, пока дата не выбрана (у type=date нет placeholder) */
+  input[type="date"].empty { position: relative; color: transparent; }
+  input[type="date"].empty::before {
+    content: "Выберите дату и время";
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); opacity: .8;
+  }
+  input[type="date"].empty::-webkit-datetime-edit { color: transparent; }
 
   .promo-row { display: flex; gap: 8px; }
   .promo-row input { flex: 1; text-transform: uppercase; letter-spacing: .12em; font-weight: 700; }
@@ -189,6 +197,12 @@
     cursor: pointer; transition: transform .12s;
   }
   .promo-btn:active { transform: scale(.95); }
+  .promo-hint {
+    font-size: .8rem; margin-top: 8px;
+    color: #B45309; background: #FEF3C7;
+    border-radius: 10px; padding: 8px 12px;
+  }
+  body.dark .promo-hint { color: #FCD34D; background: #3A2E12; }
   .promo-msg { font-size: .86rem; margin-top: 8px; min-height: 1.2em; font-weight: 600; }
   .promo-msg.ok { color: var(--ok); animation: pop .35s cubic-bezier(.5, 1.8, .5, 1); }
   .promo-msg.err { color: var(--err); }
@@ -268,7 +282,7 @@
   </svg>
   <div class="hero-title">
     <h1>SUP-прокат 🏄</h1>
-    <p>Бронь за минуту — сапы, шатёр, беседка у воды</p>
+    <p>Бронь за минуту — сапы, шатры, беседка у воды</p>
   </div>
 </div>
 
@@ -305,7 +319,7 @@
 
   <div class="step">
     <div class="step-head"><span class="step-num">2</span><span class="step-title">Когда? 📅</span></div>
-    <input type="date" id="dateInput">
+    <input type="date" id="dateInput" class="empty">
     <div style="height:12px;"></div>
     <div class="chips grid4" id="timeChips"></div>
   </div>
@@ -336,6 +350,7 @@
       <input type="text" id="promoInput" placeholder="ПРОМОКОД">
       <button class="promo-btn" id="promoApply">ОК</button>
     </div>
+    <div class="promo-hint">⚠️ Ввели промокод? Обязательно нажмите «ОК» — появится подтверждение скидки.</div>
     <div class="promo-msg" id="promoMsg"></div>
   </div>
 
@@ -408,6 +423,7 @@
   $("dateInput").max = fmtDate(maxDate);
   $("dateInput").onchange = function () {
     state.date = this.value;
+    this.classList.toggle("empty", !this.value);
     state.time = null;
     renderTimeChips();
   };
