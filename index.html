@@ -7,177 +7,359 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root {
-    --bg: var(--tg-theme-bg-color, #ffffff);
-    --text: var(--tg-theme-text-color, #222222);
-    --hint: var(--tg-theme-hint-color, #8e8e93);
-    --accent: var(--tg-theme-button-color, #2481cc);
-    --accent-text: var(--tg-theme-button-text-color, #ffffff);
-    --card: var(--tg-theme-secondary-bg-color, #f2f2f7);
+    --ocean: #0EA5E9;
+    --ocean-deep: #0284C7;
+    --teal: #06B6D4;
+    --sand: #FFF7ED;
+    --page: #F0F9FF;
+    --card-bg: #FFFFFF;
+    --text: #0C4A6E;
+    --muted: #64748B;
+    --ok: #10B981;
+    --err: #EF4444;
+    --ring: rgba(14, 165, 233, .25);
+    --shadow: 0 4px 20px rgba(2, 132, 199, .10);
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body.dark {
+    --sand: #1E293B;
+    --page: #0B1526;
+    --card-bg: #12203A;
+    --text: #E2F2FF;
+    --muted: #7C93AD;
+    --shadow: 0 4px 20px rgba(0, 0, 0, .35);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--page);
     color: var(--text);
-    padding: 16px 16px 96px;
+    padding-bottom: 110px;
   }
-  h1 { font-size: 1.3rem; margin-bottom: 4px; }
-  .sub { color: var(--hint); font-size: 0.9rem; margin-bottom: 20px; }
-  .section { margin-bottom: 20px; }
-  .label { font-weight: 600; font-size: 0.95rem; margin-bottom: 8px; display: block; }
 
-  .cards { display: grid; gap: 8px; }
+  /* ---------- ШАПКА-СЦЕНА ---------- */
+  .hero {
+    position: relative;
+    height: 210px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #7DD3FC 0%, #BAE6FD 55%, #7DD3FC 100%);
+  }
+  body.dark .hero {
+    background: linear-gradient(180deg, #1E3A5F 0%, #35507A 60%, #274766 100%);
+  }
+  .hero svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hero-title {
+    position: absolute;
+    left: 20px; bottom: 18px;
+    z-index: 3;
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(2, 60, 100, .45);
+  }
+  .hero-title h1 { font-size: 1.7rem; letter-spacing: .5px; }
+  .hero-title p { font-size: .9rem; opacity: .95; margin-top: 2px; }
+
+  /* волны — бесшовный дрейф */
+  .wave { animation: drift 9s linear infinite; }
+  .wave.w2 { animation-duration: 14s; animation-direction: reverse; }
+  .wave.w3 { animation-duration: 21s; }
+  @keyframes drift { from { transform: translateX(0); } to { transform: translateX(-400px); } }
+  .bob { animation: bob 4.5s ease-in-out infinite; transform-origin: center; }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) rotate(-1.2deg); }
+    50%      { transform: translateY(-6px) rotate(1.2deg); }
+  }
+  .sun-glow { animation: glow 5s ease-in-out infinite; transform-origin: 320px 46px; }
+  @keyframes glow { 0%,100% { opacity:.55; transform:scale(1);} 50% { opacity:.9; transform:scale(1.12);} }
+
+  /* ---------- КОНТЕНТ ---------- */
+  .wrap { padding: 18px 16px 0; max-width: 520px; margin: 0 auto; }
+
+  .step {
+    background: var(--card-bg);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+    margin-bottom: 14px;
+    opacity: 0;
+    animation: rise .45s ease forwards;
+  }
+  .step:nth-child(1) { animation-delay: .05s; }
+  .step:nth-child(2) { animation-delay: .10s; }
+  .step:nth-child(3) { animation-delay: .15s; }
+  .step:nth-child(4) { animation-delay: .20s; }
+  .step:nth-child(5) { animation-delay: .25s; }
+  .step:nth-child(6) { animation-delay: .30s; }
+  .step:nth-child(7) { animation-delay: .35s; }
+  .step:nth-child(8) { animation-delay: .40s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+  .step-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .step-num {
+    width: 26px; height: 26px; flex: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--ocean), var(--teal));
+    color: #fff; font-weight: 700; font-size: .85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-title { font-weight: 700; font-size: 1rem; }
+  .step-title .opt { color: var(--muted); font-weight: 400; font-size: .82rem; }
+
+  /* карточки услуг */
+  .cards { display: grid; gap: 10px; }
   .card {
-    background: var(--card);
+    display: flex; align-items: center; gap: 12px;
     border: 2px solid transparent;
+    background: var(--page);
     border-radius: 14px;
-    padding: 14px;
+    padding: 12px 14px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 1rem;
-    transition: border-color .15s;
+    transition: border-color .18s, transform .12s, background .18s;
+    position: relative;
   }
-  .card.selected { border-color: var(--accent); }
-  .card .emoji { font-size: 1.5rem; }
-  .card .place-hint { color: var(--hint); font-size: 0.8rem; }
+  .card:active { transform: scale(.98); }
+  .card .ico {
+    width: 44px; height: 44px; flex: none;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.45rem;
+    background: linear-gradient(135deg, #E0F2FE, #CFFAFE);
+  }
+  body.dark .card .ico { background: linear-gradient(135deg, #173B5C, #114B5F); }
+  .card b { font-size: 1rem; display: block; }
+  .card small { color: var(--muted); font-size: .8rem; }
+  .card .check {
+    position: absolute; right: 12px; top: 50%;
+    transform: translateY(-50%) scale(0);
+    width: 24px; height: 24px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--ocean), var(--teal));
+    color: #fff; font-size: .8rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .2s cubic-bezier(.5, 1.8, .5, 1);
+  }
+  .card.selected { border-color: var(--ocean); background: var(--card-bg); }
+  .card.selected .check { transform: translateY(-50%) scale(1); }
 
+  /* чипсы */
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); }
   .chip {
-    background: var(--card);
     border: 2px solid transparent;
-    border-radius: 20px;
-    padding: 8px 16px;
+    background: var(--page);
+    color: var(--text);
+    border-radius: 22px;
+    padding: 9px 16px;
+    text-align: center;
+    font-size: .92rem;
     cursor: pointer;
-    font-size: 0.95rem;
-    transition: border-color .15s;
+    transition: all .16s;
+    user-select: none;
   }
-  .chip.selected { border-color: var(--accent); font-weight: 600; }
-  .chip.disabled { opacity: 0.35; pointer-events: none; }
+  .chips.grid4 .chip { padding: 9px 4px; }
+  .chip:active { transform: scale(.94); }
+  .chip.selected {
+    background: linear-gradient(135deg, var(--ocean), var(--teal));
+    color: #fff; font-weight: 700;
+    box-shadow: 0 3px 12px var(--ring);
+  }
+  .chip.disabled { opacity: .3; pointer-events: none; }
 
+  /* поля */
   input[type="text"], input[type="tel"], input[type="date"], input[type="number"], textarea {
     width: 100%;
-    background: var(--card);
+    background: var(--page);
     border: 2px solid transparent;
-    border-radius: 12px;
+    border-radius: 13px;
     padding: 12px 14px;
     font-size: 1rem;
     color: var(--text);
     outline: none;
     font-family: inherit;
+    transition: border-color .18s, box-shadow .18s;
   }
-  input:focus, textarea:focus { border-color: var(--accent); }
-  textarea { resize: none; height: 72px; }
+  input:focus, textarea:focus { border-color: var(--ocean); box-shadow: 0 0 0 4px var(--ring); background: var(--card-bg); }
+  input::placeholder, textarea::placeholder { color: var(--muted); opacity: .8; }
+  textarea { resize: none; height: 74px; }
+  input[type="date"] { -webkit-appearance: none; appearance: none; min-height: 47px; }
 
   .promo-row { display: flex; gap: 8px; }
-  .promo-row input { flex: 1; text-transform: uppercase; }
+  .promo-row input { flex: 1; text-transform: uppercase; letter-spacing: .12em; font-weight: 700; }
   .promo-btn {
-    background: var(--accent);
-    color: var(--accent-text);
-    border: none;
-    border-radius: 12px;
-    padding: 0 18px;
-    font-size: 0.95rem;
-    cursor: pointer;
+    background: linear-gradient(135deg, var(--ocean), var(--teal));
+    color: #fff; border: none; border-radius: 13px;
+    padding: 0 18px; font-size: .92rem; font-weight: 700;
+    cursor: pointer; transition: transform .12s;
   }
-  .promo-msg { font-size: 0.85rem; margin-top: 6px; min-height: 1.2em; }
-  .promo-msg.ok { color: #2e9e46; }
-  .promo-msg.err { color: #d33; }
+  .promo-btn:active { transform: scale(.95); }
+  .promo-msg { font-size: .86rem; margin-top: 8px; min-height: 1.2em; font-weight: 600; }
+  .promo-msg.ok { color: var(--ok); animation: pop .35s cubic-bezier(.5, 1.8, .5, 1); }
+  .promo-msg.err { color: var(--err); }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
 
-  .hidden { display: none; }
-  .error-hl { border-color: #d33 !important; }
+  .hidden { display: none !important; }
 
   #submitFallback {
-    width: 100%;
-    background: var(--accent);
-    color: var(--accent-text);
-    border: none;
-    border-radius: 14px;
-    padding: 15px;
-    font-size: 1.05rem;
-    font-weight: 600;
+    display: block;
+    width: calc(100% - 32px);
+    max-width: 488px;
+    margin: 4px auto 0;
+    background: linear-gradient(135deg, var(--ocean-deep), var(--teal));
+    color: #fff; border: none; border-radius: 16px;
+    padding: 16px; font-size: 1.05rem; font-weight: 700;
     cursor: pointer;
-    margin-top: 8px;
+    box-shadow: 0 6px 20px var(--ring);
+  }
+  .footer-note {
+    text-align: center; color: var(--muted);
+    font-size: .78rem; padding: 14px 24px 0;
   }
 </style>
 </head>
 <body>
 
-<h1>🏄 SUP-прокат</h1>
-<div class="sub">Бронь за минуту — сапборды, шатёр, беседка у воды</div>
+<!-- ======== ШАПКА: пляжная сцена ======== -->
+<div class="hero">
+  <svg viewBox="0 0 400 210" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <!-- солнце -->
+    <circle class="sun-glow" cx="320" cy="46" r="46" fill="#FDE68A" opacity=".55"/>
+    <circle cx="320" cy="46" r="26" fill="#FCD34D"/>
+    <!-- облака -->
+    <g fill="#FFFFFF" opacity=".8">
+      <ellipse cx="70" cy="38" rx="30" ry="10"/>
+      <ellipse cx="94" cy="32" rx="20" ry="8"/>
+      <ellipse cx="215" cy="62" rx="24" ry="8" opacity=".6"/>
+    </g>
+    <!-- чайки -->
+    <g stroke="#3B6E91" stroke-width="2.2" fill="none" stroke-linecap="round">
+      <path d="M150 46 q6 -7 12 0 q6 -7 12 0"/>
+      <path d="M186 30 q5 -6 10 0 q5 -6 10 0"/>
+    </g>
 
-<div class="section">
-  <span class="label">Что бронируем?</span>
-  <div class="cards" id="serviceCards">
-    <div class="card" data-service="Сапборды"><span class="emoji">🏄</span><div>Сапборды<div class="place-hint">доска, весло, жилет и лиш — в комплекте</div></div></div>
-    <div class="card" data-service="Шатёр" data-place="Пляж Малибу"><span class="emoji">⛺</span><div>Шатёр<div class="place-hint">Пляж Малибу</div></div></div>
-    <div class="card" data-service="Беседка" data-place="8-я просека"><span class="emoji">🏡</span><div>Беседка<div class="place-hint">8-я просека</div></div></div>
+    <!-- сапсёрфер (покачивается) -->
+    <g class="bob">
+      <g transform="translate(120,158)" stroke="#0C4A6E" fill="none" stroke-linecap="round">
+        <!-- весло -->
+        <line x1="34" y1="-64" x2="12" y2="8" stroke-width="4"/>
+        <ellipse cx="10" cy="12" rx="6" ry="10" fill="#0C4A6E" stroke="none" transform="rotate(17 10 12)"/>
+        <!-- ноги -->
+        <line x1="-8" y1="-22" x2="-13" y2="-2" stroke-width="5.5"/>
+        <line x1="2" y1="-22" x2="6" y2="-2" stroke-width="5.5"/>
+        <!-- торс -->
+        <line x1="-3" y1="-23" x2="3" y2="-45" stroke-width="7"/>
+        <!-- руки к веслу -->
+        <line x1="1" y1="-42" x2="27" y2="-52" stroke-width="5"/>
+        <line x1="2" y1="-34" x2="22" y2="-36" stroke-width="5"/>
+        <!-- голова -->
+        <circle cx="6" cy="-54" r="7.5" fill="#0C4A6E" stroke="none"/>
+        <!-- доска -->
+        <path d="M-52 2 Q0 -8 54 2 Q30 10 0 10 Q-30 10 -52 2 Z" fill="#F97316" stroke="none"/>
+        <path d="M-52 2 Q0 -8 54 2" stroke="#FDBA74" stroke-width="2.5"/>
+      </g>
+    </g>
+
+    <!-- волны: три слоя, каждый — бесшовная лента 800px -->
+    <g class="wave w3" opacity=".45" fill="#38BDF8">
+      <path d="M0 180 Q50 168 100 180 T200 180 T300 180 T400 180 T500 180 T600 180 T700 180 T800 180 V210 H0 Z"/>
+    </g>
+    <g class="wave w2" opacity=".7" fill="#0EA5E9">
+      <path d="M0 190 Q50 178 100 190 T200 190 T300 190 T400 190 T500 190 T600 190 T700 190 T800 190 V210 H0 Z"/>
+    </g>
+    <g class="wave" fill="#0284C7">
+      <path d="M0 200 Q50 190 100 200 T200 200 T300 200 T400 200 T500 200 T600 200 T700 200 T800 200 V210 H0 Z"/>
+    </g>
+  </svg>
+  <div class="hero-title">
+    <h1>SUP-прокат 🏄</h1>
+    <p>Бронь за минуту — сапы, шатёр, беседка у воды</p>
   </div>
 </div>
 
-<div class="section hidden" id="beachSection">
-  <span class="label">Где кататься? 🏖</span>
-  <div class="chips" id="beachChips">
-    <div class="chip" data-beach="8-я просека">8-я просека</div>
-    <div class="chip" data-beach="Пляж Малибу">Пляж Малибу</div>
-    <div class="chip" data-beach="Красная Глинка">Красная Глинка</div>
+<div class="wrap">
+
+  <div class="step">
+    <div class="step-head"><span class="step-num">1</span><span class="step-title">Что бронируем?</span></div>
+    <div class="cards" id="serviceCards">
+      <div class="card" data-service="Сапборды">
+        <span class="ico">🏄</span>
+        <div><b>Сапборды</b><small>доска, весло, жилет и лиш — в комплекте</small></div>
+        <span class="check">✓</span>
+      </div>
+      <div class="card" data-service="Шатёр" data-place="Пляж Малибу">
+        <span class="ico">⛺</span>
+        <div><b>Шатёр</b><small>Пляж Малибу</small></div>
+        <span class="check">✓</span>
+      </div>
+      <div class="card" data-service="Беседка" data-place="8-я просека">
+        <span class="ico">🏡</span>
+        <div><b>Беседка</b><small>8-я просека</small></div>
+        <span class="check">✓</span>
+      </div>
+    </div>
+    <div id="beachBlock" class="hidden" style="margin-top:12px;">
+      <div class="step-head" style="margin-bottom:8px;"><span class="step-title" style="font-size:.9rem;">Где кататься? 🏖</span></div>
+      <div class="chips" id="beachChips">
+        <div class="chip" data-beach="8-я просека">8-я просека</div>
+        <div class="chip" data-beach="Пляж Малибу">Пляж Малибу</div>
+        <div class="chip" data-beach="Красная Глинка">Красная Глинка</div>
+      </div>
+    </div>
   </div>
-</div>
 
-<div class="section">
-  <span class="label">Дата 📅</span>
-  <input type="date" id="dateInput">
-</div>
-
-<div class="section">
-  <span class="label">Время 🕐</span>
-  <div class="chips" id="timeChips"></div>
-</div>
-
-<div class="section">
-  <span class="label">Сколько человек? 👥</span>
-  <div class="chips" id="peopleChips">
-    <div class="chip" data-people="1">1</div>
-    <div class="chip" data-people="2">2</div>
-    <div class="chip" data-people="3">3</div>
-    <div class="chip" data-people="4">4</div>
-    <div class="chip" data-people="5">5</div>
-    <div class="chip" data-people="more">Больше</div>
+  <div class="step">
+    <div class="step-head"><span class="step-num">2</span><span class="step-title">Когда? 📅</span></div>
+    <input type="date" id="dateInput">
+    <div style="height:12px;"></div>
+    <div class="chips grid4" id="timeChips"></div>
   </div>
-  <input type="number" id="peopleManual" class="hidden" min="1" max="100" placeholder="Сколько вас будет?" style="margin-top:8px;">
-</div>
 
-<div class="section">
-  <span class="label">Как вас зовут?</span>
-  <input type="text" id="nameInput" placeholder="Имя">
-</div>
-
-<div class="section">
-  <span class="label">Телефон <span style="color:var(--hint);font-weight:400;">(можно пропустить — напишем в Telegram)</span></span>
-  <input type="tel" id="phoneInput" placeholder="+7 900 000-00-00">
-</div>
-
-<div class="section">
-  <span class="label">Промокод 🎁 <span style="color:var(--hint);font-weight:400;">(если есть)</span></span>
-  <div class="promo-row">
-    <input type="text" id="promoInput" placeholder="ПРОМОКОД">
-    <button class="promo-btn" id="promoApply">Применить</button>
+  <div class="step">
+    <div class="step-head"><span class="step-num">3</span><span class="step-title">Сколько человек? 👥</span></div>
+    <div class="chips" id="peopleChips">
+      <div class="chip" data-people="1">1</div>
+      <div class="chip" data-people="2">2</div>
+      <div class="chip" data-people="3">3</div>
+      <div class="chip" data-people="4">4</div>
+      <div class="chip" data-people="5">5</div>
+      <div class="chip" data-people="more">Больше</div>
+    </div>
+    <input type="number" id="peopleManual" class="hidden" min="1" max="100" placeholder="Сколько вас будет?" style="margin-top:10px;">
   </div>
-  <div class="promo-msg" id="promoMsg"></div>
+
+  <div class="step">
+    <div class="step-head"><span class="step-num">4</span><span class="step-title">О вас</span></div>
+    <input type="text" id="nameInput" placeholder="Ваше имя">
+    <div style="height:10px;"></div>
+    <input type="tel" id="phoneInput" placeholder="Телефон (можно пропустить)">
+  </div>
+
+  <div class="step">
+    <div class="step-head"><span class="step-num">5</span><span class="step-title">Промокод 🎁 <span class="opt">· если есть</span></span></div>
+    <div class="promo-row">
+      <input type="text" id="promoInput" placeholder="ПРОМОКОД">
+      <button class="promo-btn" id="promoApply">ОК</button>
+    </div>
+    <div class="promo-msg" id="promoMsg"></div>
+  </div>
+
+  <div class="step">
+    <div class="step-head"><span class="step-num">6</span><span class="step-title">Комментарий 💬 <span class="opt">· необязательно</span></span></div>
+    <textarea id="commentInput" placeholder="Например: нужен инструктаж, будут дети…"></textarea>
+  </div>
+
 </div>
 
-<div class="section">
-  <span class="label">Комментарий 💬 <span style="color:var(--hint);font-weight:400;">(необязательно)</span></span>
-  <textarea id="commentInput" placeholder="Например: нужен инструктаж, будут дети…"></textarea>
-</div>
-
-<button id="submitFallback">📝 Забронировать</button>
+<button id="submitFallback">🌊 Забронировать</button>
+<div class="footer-note">Отправляя заявку, вы соглашаетесь, что мы свяжемся с вами для подтверждения брони.</div>
 
 <script>
   var tg = window.Telegram.WebApp;
   tg.ready();
   tg.expand();
+
+  // тёмная тема
+  if (tg.colorScheme === "dark" ||
+      (!tg.initData && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+    document.body.classList.add("dark");
+  }
+  try { tg.setHeaderColor(document.body.classList.contains("dark") ? "#1E3A5F" : "#7DD3FC"); } catch (e) {}
 
   // Настройки (совпадают с ботом)
   var WORK_START = 7, WORK_END = 23, MAX_DAYS_AHEAD = 90;
@@ -196,10 +378,10 @@
       c.classList.add("selected");
       state.service = c.dataset.service;
       if (state.service === "Сапборды") {
-        $("beachSection").classList.remove("hidden");
+        $("beachBlock").classList.remove("hidden");
         state.place = null;
       } else {
-        $("beachSection").classList.add("hidden");
+        $("beachBlock").classList.add("hidden");
         document.querySelectorAll("#beachChips .chip").forEach(function (x) { x.classList.remove("selected"); });
         state.place = c.dataset.place;
       }
@@ -251,7 +433,7 @@
       box.appendChild(chip);
     }
     if (!box.querySelector(".chip:not(.disabled)")) {
-      box.innerHTML = '<span style="color:var(--hint)">На сегодня свободных часов уже нет 😔 Выберите другой день.</span>';
+      box.innerHTML = '<span style="color:var(--muted);grid-column:1/-1;">На сегодня свободных часов уже нет 😔 Выберите другой день.</span>';
     }
   }
   renderTimeChips();
@@ -286,10 +468,12 @@
       state.discount = PROMO_CODES[code];
       msg.textContent = "🎉 Промокод принят — скидка " + state.discount + "%!";
       msg.className = "promo-msg ok";
+      if (tg.HapticFeedback) { try { tg.HapticFeedback.notificationOccurred("success"); } catch (e) {} }
     } else {
       state.promo = ""; state.discount = 0;
       msg.textContent = "Такого промокода нет 😔";
       msg.className = "promo-msg err";
+      if (tg.HapticFeedback) { try { tg.HapticFeedback.notificationOccurred("error"); } catch (e) {} }
     }
   };
 
@@ -329,8 +513,9 @@
   }
 
   // Главная кнопка Telegram + запасная на странице
-  if (tg.MainButton) {
-    tg.MainButton.setText("📝 Забронировать");
+  if (tg.MainButton && tg.initData) {
+    tg.MainButton.setText("🌊 Забронировать");
+    tg.MainButton.color = "#0284C7";
     tg.MainButton.show();
     tg.MainButton.onClick(submit);
     $("submitFallback").style.display = "none";
