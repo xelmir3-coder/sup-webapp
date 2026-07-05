@@ -459,23 +459,32 @@
   };
 
   // ---- Промокод ----
-  $("promoApply").onclick = function () {
+  // Проверяется автоматически при каждом изменении поля —
+  // нажимать «ОК» не обязательно, но кнопка тоже работает.
+  function checkPromo(withHaptic) {
     var code = $("promoInput").value.trim().toUpperCase().replace(/\s+/g, "");
     var msg = $("promoMsg");
-    if (!code) { msg.textContent = ""; state.promo = ""; state.discount = 0; return; }
+    if (!code) {
+      msg.textContent = ""; msg.className = "promo-msg";
+      state.promo = ""; state.discount = 0;
+      return true;
+    }
     if (PROMO_CODES[code]) {
       state.promo = code;
       state.discount = PROMO_CODES[code];
       msg.textContent = "🎉 Промокод принят — скидка " + state.discount + "%!";
       msg.className = "promo-msg ok";
-      if (tg.HapticFeedback) { try { tg.HapticFeedback.notificationOccurred("success"); } catch (e) {} }
-    } else {
-      state.promo = ""; state.discount = 0;
-      msg.textContent = "Такого промокода нет 😔";
-      msg.className = "promo-msg err";
-      if (tg.HapticFeedback) { try { tg.HapticFeedback.notificationOccurred("error"); } catch (e) {} }
+      if (withHaptic && tg.HapticFeedback) { try { tg.HapticFeedback.notificationOccurred("success"); } catch (e) {} }
+      return true;
     }
-  };
+    state.promo = ""; state.discount = 0;
+    msg.textContent = "Такого промокода нет 😔";
+    msg.className = "promo-msg err";
+    if (withHaptic && tg.HapticFeedback) { try { tg.HapticFeedback.notificationOccurred("error"); } catch (e) {} }
+    return false;
+  }
+  $("promoInput").oninput = function () { checkPromo(false); };
+  $("promoApply").onclick = function () { checkPromo(true); };
 
   // ---- Отправка ----
   function validate() {
@@ -494,6 +503,13 @@
     if (missing.length) {
       var text = "Заполните, пожалуйста: " + missing.join(", ");
       if (tg.showAlert) { tg.showAlert(text); } else { alert(text); }
+      return;
+    }
+    // Перечитываем промокод из поля прямо перед отправкой —
+    // на случай, если пользователь ввёл его и сразу нажал «Забронировать»
+    if (!checkPromo(false)) {
+      var ptext = "Промокод введён с ошибкой 😔 Исправьте его или очистите поле.";
+      if (tg.showAlert) { tg.showAlert(ptext); } else { alert(ptext); }
       return;
     }
     var d = state.date.split("-");
